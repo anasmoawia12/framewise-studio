@@ -144,6 +144,40 @@
   }
   .telemetry div span{color:var(--ink);}
 
+  .settings-grid{
+    margin-top:16px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .settings-grid label{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    font-size:12px;
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--ink-dim);
+  }
+  .settings-grid label.checkbox-row{
+    grid-column:1 / -1;
+    flex-direction:row;
+    align-items:center;
+    gap:8px;
+    font-family:'Space Grotesk',sans-serif;
+    font-size:13px;
+    color:var(--ink);
+  }
+  select, input[type=number]{
+    background:var(--bg);
+    border:1px solid var(--panel-line);
+    color:var(--ink);
+    border-radius:6px;
+    padding:8px 10px;
+    font-family:'Space Grotesk',sans-serif;
+    font-size:13px;
+  }
+  input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);}
+
   .note{
     margin-top:28px;
     font-size:13px;
@@ -153,6 +187,53 @@
     line-height:1.6;
   }
   .note b{color:var(--ink);}
+
+  .field-label{
+    display:block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin:16px 0 8px;
+  }
+  .field-label:first-of-type{margin-top:0;}
+
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .pill{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    padding:8px 14px;
+    border-radius:20px;
+    border:1px solid var(--panel-line);
+    background:transparent;
+    color:var(--ink-dim);
+    cursor:pointer;
+  }
+  .pill.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+
+  input[type=range]{width:100%;accent-color:var(--accent);}
+
+  .field-row{display:flex;gap:14px;}
+  .field-row > div{flex:1;}
+  select{
+    width:100%;
+    font-family:'Space Grotesk',sans-serif;
+    font-size:13px;
+    padding:9px 10px;
+    border-radius:6px;
+    border:1px solid var(--panel-line);
+    background:var(--bg);
+    color:var(--ink);
+  }
+
+  .folder-status{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-dim);
+    align-self:center;
+  }
+  .folder-status.set{color:var(--accent);}
 
   a.download-link{
     display:inline-block;
@@ -186,6 +267,31 @@
         <video id="srcVideo" muted playsinline></video>
         <div class="crop-guide" id="cropGuide"></div>
       </div>
+      <div class="settings-grid" id="settingsGrid" style="display:none;">
+        <label>Clip length
+          <select id="durationPreset">
+            <option value="full">Full video</option>
+            <option value="30-60">30–60 sec</option>
+            <option value="60-90">60–90 sec</option>
+            <option value="custom">Custom range</option>
+          </select>
+        </label>
+        <label id="customRangeWrap" style="display:none;">Duration (sec)
+          <input type="number" id="customDuration" min="5" max="600" value="45">
+        </label>
+        <label>Start at (sec)
+          <input type="number" id="startTime" min="0" value="0">
+        </label>
+        <label>Quality
+          <select id="qualitySelect">
+            <option value="low">Low — 480p (fast, small file)</option>
+            <option value="med" selected>Medium — 720p</option>
+            <option value="high">High — source resolution</option>
+          </select>
+        </label>
+        <label class="checkbox-row"><input type="checkbox" id="thumbCheck"> Also save 3 JPG cover thumbnails</label>
+        <label class="checkbox-row"><input type="checkbox" id="autoSaveCheck"> Auto-save output to a folder I choose</label>
+      </div>
       <div class="controls">
         <button class="primary" id="processBtn" disabled>Track &amp; crop</button>
         <button id="resetBtn" style="display:none;">Load another video</button>
@@ -200,12 +306,50 @@
     </div>
 
     <div class="panel">
-      <h2>02 — Vertical output</h2>
+      <h2>02 — Export settings</h2>
+
+      <label class="field-label">Clip length</label>
+      <div class="pill-row" id="durationRow">
+        <button type="button" class="pill active" data-min="30" data-max="60">30–60s</button>
+        <button type="button" class="pill" data-min="60" data-max="90">60–90s</button>
+        <button type="button" class="pill" data-min="0" data-max="0">Full video</button>
+      </div>
+
+      <label class="field-label" id="startLabel">Clip start: <span id="startVal">0:00</span></label>
+      <input type="range" id="startSlider" min="0" max="0" value="0" step="1">
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Format</label>
+          <select id="formatSelect">
+            <option value="mp4">MP4 (H.264)</option>
+            <option value="webm">WebM (VP9)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Quality</label>
+          <select id="qualitySelect">
+            <option value="high">High (~8 Mbps)</option>
+            <option value="medium" selected>Medium (~4 Mbps)</option>
+            <option value="low">Low (~1.5 Mbps)</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="field-label">Auto-save folder</label>
+      <div class="controls">
+        <button id="folderBtn" type="button">Choose folder</button>
+        <span class="folder-status" id="folderStatus">not set — will download normally</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>03 — Vertical output</h2>
       <div class="output-holder">
         <canvas id="outCanvas"></canvas>
       </div>
       <div class="controls">
-        <button id="downloadBtn" disabled>Download .webm</button>
+        <button id="downloadBtn" disabled>Download</button>
       </div>
     </div>
   </div>
@@ -233,8 +377,51 @@ const tConf = document.getElementById('tConf');
 const outCanvas = document.getElementById('outCanvas');
 const outCtx = outCanvas.getContext('2d');
 
+const durationRow = document.getElementById('durationRow');
+const startSlider = document.getElementById('startSlider');
+const startVal = document.getElementById('startVal');
+const formatSelect = document.getElementById('formatSelect');
+const qualitySelect = document.getElementById('qualitySelect');
+const folderBtn = document.getElementById('folderBtn');
+const folderStatus = document.getElementById('folderStatus');
+
 let videoURL = null;
 let recordedBlobURL = null;
+let recordedFilename = 'framewise-clip';
+let selectedMin = 30, selectedMax = 60;
+let folderHandle = null;
+
+function fmtTime(s){
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return m + ':' + String(sec).padStart(2,'0');
+}
+function updateStartLabel(){
+  startVal.textContent = fmtTime(parseFloat(startSlider.value));
+}
+startSlider.addEventListener('input', updateStartLabel);
+
+durationRow.querySelectorAll('.pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    durationRow.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedMin = parseInt(btn.dataset.min);
+    selectedMax = parseInt(btn.dataset.max);
+  });
+});
+
+folderBtn.addEventListener('click', async () => {
+  if (!window.showDirectoryPicker){
+    folderStatus.textContent = "your browser doesn't support this — will download normally";
+    return;
+  }
+  try{
+    folderHandle = await window.showDirectoryPicker();
+    folderStatus.textContent = 'saving to "' + folderHandle.name + '" automatically';
+    folderStatus.classList.add('set');
+  }catch(e){
+    // user cancelled the picker — leave as is
+  }
+});
 
 dropzone.addEventListener('click', () => fileInput.click());
 ['dragover','dragenter'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
@@ -253,6 +440,9 @@ function loadFile(file){
   statusEl.textContent = 'Video loaded — click "Track & crop" to process.';
   srcVideo.addEventListener('loadedmetadata', () => {
     updateCropGuidePreview();
+    startSlider.max = Math.max(0, Math.floor(srcVideo.duration));
+    startSlider.value = 0;
+    updateStartLabel();
   }, {once:true});
 }
 
@@ -312,6 +502,24 @@ function scoreFrame(imgData, w, h, gridSize){
   return { cx: w/2, cy: h/2, conf: 0 };
 }
 
+const QUALITY_BITRATES = { high: 8_000_000, medium: 4_000_000, low: 1_500_000 };
+
+function pickRecorderOptions(){
+  const wantMp4 = formatSelect.value === 'mp4';
+  const bitrate = QUALITY_BITRATES[qualitySelect.value];
+  const mp4Candidates = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
+  if (wantMp4){
+    for (const type of mp4Candidates){
+      if (MediaRecorder.isTypeSupported(type)){
+        return { mimeType: type, ext: 'mp4', videoBitsPerSecond: bitrate };
+      }
+    }
+    // browser can't record real H.264 — fall back, but say so
+    statusEl.innerHTML = '<span class="dot">●</span> this browser can\'t export H.264 directly — using WebM instead (still plays everywhere, just re-encode with a free tool like CloudConvert if you need .mp4).';
+  }
+  return { mimeType: 'video/webm;codecs=vp9', ext: 'webm', videoBitsPerSecond: bitrate };
+}
+
 processBtn.addEventListener('click', processVideo);
 
 async function processVideo(){
@@ -333,25 +541,43 @@ async function processVideo(){
   sampleCanvas.width = w; sampleCanvas.height = h;
   const sampleCtx = sampleCanvas.getContext('2d', {willReadFrequently:true});
 
+  // work out the clip window the user asked for
+  const fullDuration = srcVideo.duration;
+  let clipStart = parseFloat(startSlider.value) || 0;
+  let clipLength;
+  if (selectedMax === 0){ // "Full video"
+    clipStart = 0;
+    clipLength = fullDuration;
+  } else {
+    clipLength = (selectedMin + selectedMax) / 2;
+    if (clipStart + clipLength > fullDuration){
+      clipStart = Math.max(0, fullDuration - clipLength);
+    }
+    clipLength = Math.min(clipLength, fullDuration - clipStart);
+  }
+
+  const { mimeType, ext, videoBitsPerSecond } = pickRecorderOptions();
   const stream = outCanvas.captureStream(30);
-  const recorder = new MediaRecorder(stream, {mimeType:'video/webm;codecs=vp9'});
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond });
   const chunks = [];
   recorder.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
   const recordingDone = new Promise(res => { recorder.onstop = res; });
 
-  srcVideo.currentTime = 0;
+  srcVideo.currentTime = clipStart;
   await new Promise(res => { srcVideo.onseeked = res; });
 
   recorder.start();
   let smoothCx = w/2, smoothCy = h/2;
   let frameCount = 0;
-  const smoothingFactor = 0.12; // lower = smoother/slower to react
+  const smoothingFactor = 0.12;
+  const clipEndTime = clipStart + clipLength;
 
   await srcVideo.play();
 
   function drawLoop(){
-    if (srcVideo.paused || srcVideo.ended){
+    if (srcVideo.paused || srcVideo.ended || srcVideo.currentTime >= clipEndTime){
       recorder.stop();
+      srcVideo.pause();
       return;
     }
     sampleCtx.drawImage(srcVideo, 0, 0, w, h);
@@ -367,7 +593,6 @@ async function processVideo(){
 
     outCtx.drawImage(sampleCanvas, x, y, cropW, cropH, 0, 0, cropW, cropH);
 
-    // live guide + telemetry
     cropGuide.style.left = ((x / w) * srcVideo.clientWidth) + 'px';
     cropGuide.style.width = ((cropW / w) * srcVideo.clientWidth) + 'px';
     frameCount++;
@@ -380,15 +605,28 @@ async function processVideo(){
   }
   requestAnimationFrame(drawLoop);
 
-  srcVideo.onended = () => { recorder.stop(); };
-
   await recordingDone;
 
-  const blob = new Blob(chunks, {type:'video/webm'});
+  const blob = new Blob(chunks, {type: mimeType});
   if (recordedBlobURL) URL.revokeObjectURL(recordedBlobURL);
   recordedBlobURL = URL.createObjectURL(blob);
+  recordedFilename = 'framewise-clip.' + ext;
+  downloadBtn.textContent = 'Download .' + ext;
   downloadBtn.disabled = false;
-  statusEl.innerHTML = '<span class="dot">●</span> done — ' + frameCount + ' frames processed. Ready to download.';
+
+  if (folderHandle){
+    try{
+      const fileHandle = await folderHandle.getFileHandle(recordedFilename, {create:true});
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      statusEl.innerHTML = '<span class="dot">●</span> saved automatically to "' + folderHandle.name + '/' + recordedFilename + '"';
+    }catch(e){
+      statusEl.innerHTML = '<span class="dot">●</span> done, but auto-save failed (' + e.message + ') — use the download button instead.';
+    }
+  } else {
+    statusEl.innerHTML = '<span class="dot">●</span> done — ' + frameCount + ' frames processed. Ready to download.';
+  }
   processBtn.disabled = false;
 }
 
@@ -396,7 +634,7 @@ downloadBtn.addEventListener('click', () => {
   if (!recordedBlobURL) return;
   const a = document.createElement('a');
   a.href = recordedBlobURL;
-  a.download = 'framewise-vertical-clip.webm';
+  a.download = recordedFilename;
   a.click();
 });
 </script>
